@@ -23,7 +23,7 @@ def add_user(user: User):
     users.append(user)
     return user
 
-@app.put("/api/users/update/{user_id}")
+@app.put("/api/users/update/{user_id}", status_code=status.HTTP_201_CREATED)
 #Here updated_user is expected to be a User object, and would be populated from the request body
 def update_user(user_id: int, updated_user: User):
     #Here I use enumerate function to loop over the users list and get the position (index) and the user object at that position to update in place
@@ -32,4 +32,13 @@ def update_user(user_id: int, updated_user: User):
             #With updated_user, I can replace it with the user object at position (index)
             users[index] = updated_user
             return updated_user
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+@app.delete("/app/users/delete/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_user(user_id: int):
+    for u in users:
+        if u.user_id == user_id:
+            #.remove() function to remove the object
+            users.remove(u)
+            return u
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
