@@ -22,3 +22,14 @@ def add_user(user: User):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="user_id already exists")
     users.append(user)
     return user
+
+@app.put("/api/users/update/{user_id}")
+#Here updated_user is expected to be a User object, and would be populated from the request body
+def update_user(user_id: int, updated_user: User):
+    #Here I use enumerate function to loop over the users list and get the position (index) and the user object at that position to update in place
+    for index, u in enumerate(users):
+        if u.user_id == user_id:
+            #With updated_user, I can replace it with the user object at position (index)
+            users[index] = updated_user
+            return updated_user
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
