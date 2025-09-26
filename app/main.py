@@ -43,6 +43,7 @@ def delete_user(user_id: int):
             return u
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
+#Prints a status
 @app.get("/health")
 def health():
     return {"status": "ok"}
