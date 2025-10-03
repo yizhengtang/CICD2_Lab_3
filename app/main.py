@@ -34,13 +34,13 @@ def update_user(user_id: int, updated_user: User):
             return updated_user
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
-@app.delete("/app/users/delete/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+@app.delete("/api/users/delete/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_user(user_id: int):
-    for u in users:
+#Prints a status
+    for index, u in enumerate(users):
         if u.user_id == user_id:
-            #.remove() function to remove the object
-            users.remove(u)
-            return u
+            users.pop(index)
+            return
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
 #Prints a status
