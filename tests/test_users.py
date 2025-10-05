@@ -33,3 +33,22 @@ def test_delete_then_404(client):
 def test_get_user_404(client): 
     r = client.get("/api/users/999") 
     assert r.status_code == 404 
+
+#This function tests updating a user successfully that will return 200 status code, and also tests updating a non-exisrting user will result in 404 status code
+def test_update_user_ok(client):
+    client.post("/api/users", json=user_payload()) 
+    r = client.put("/api/users/update/1", json=user_payload(name="YZ", email="YZ@atu.ie", age=20, sid="S7654321")) 
+    assert r.status_code == 200 
+    data = r.json() 
+    assert data["name"] == "YZ" 
+    assert data["email"] == "YZ@atu.ie"
+    assert data["age"] == 20 
+    assert data["student_id"] == "S7654321"
+    r = client.put("/api/users/update/999", json=user_payload(name="YZ"))
+    assert r.status_code == 404
+
+#This function tests creatign a user wil bad email, will return 422 status code
+@pytest.mark.parametrize("bad_email", ["yz@atu", "yz@.ie", "yz@com", "yz@"]) 
+def test_bad_email_422(client, bad_email): 
+    r = client.post("/api/users", json=user_payload(uid=3, sid=bad_email)) 
+    assert r.status_code == 422 
