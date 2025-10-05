@@ -23,7 +23,7 @@ def add_user(user: User):
     users.append(user)
     return user
 
-@app.put("/api/users/update/{user_id}", status_code=status.HTTP_201_CREATED)
+@app.put("/api/users/update/{user_id}", status_code=status.HTTP_200_OK)
 #Here updated_user is expected to be a User object, and would be populated from the request body
 def update_user(user_id: int, updated_user: User):
     #Here I use enumerate function to loop over the users list and get the position (index) and the user object at that position to update in place
