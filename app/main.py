@@ -1,49 +1,42 @@
-# app/main.py
-from fastapi import FastAPI, HTTPException, status
-from .schemas import User
-
-app = FastAPI()
-users: list[User] = []
-
-@app.get("/api/users")
-def get_users():
-    return users
-
-@app.get("/api/users/{user_id}")
-def get_user(user_id: int):
-    for u in users:
-        if u.user_id == user_id:
-            return u
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-
-@app.post("/api/users", status_code=status.HTTP_201_CREATED)
-def add_user(user: User):
-    if any(u.user_id == user.user_id for u in users):
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="user_id already exists")
-    users.append(user)
+from fastapi import FastAPI, Depends, HTTPException, status 
+from sqlalchemy.orm import Session 
+from sqlalchemy import select 
+from sqlalchemy.exc import IntegrityError 
+ 
+from .database import engine, SessionLocal 
+from .models import Base, UserDB 
+from .schemas import UserCreate, UserRead 
+ 
+app = FastAPI() 
+Base.metadata.create_all(bind=engine) 
+ 
+def get_db(): 
+    db = SessionLocal() 
+    try: 
+        yield db 
+    finally: 
+        db.close() 
+ 
+@app.get("/api/users", response_model=list[UserRead])
+def list_users(db: Session = Depends(get_db)): 
+    stmt = select(UserDB).order_by(UserDB.id) 
+    return list(db.execute(stmt).scalars()) 
+ 
+@app.get("/api/users/{user_id}", response_model=UserRead) 
+def get_user(user_id: int, db: Session = Depends(get_db)): 
+    user = db.get(UserDB, user_id) 
+    if not user: 
+        raise HTTPException(status_code=404, detail="User not found") 
+    return user 
+ 
+@app.post("/api/users", response_model=UserRead, status_code=status.HTTP_201_CREATED) 
+def add_user(payload: UserCreate, db: Session = Depends(get_db)): 
+    user = UserDB(**payload.model_dump()) 
+    db.add(user) 
+    try: 
+        db.commit() 
+        db.refresh(user) 
+    except IntegrityError: 
+        db.rollback() 
+        raise HTTPException(status_code=409, detail="User already exists") 
     return user
-
-@app.put("/api/users/update/{user_id}", status_code=status.HTTP_200_OK)
-#Here updated_user is expected to be a User object, and would be populated from the request body
-def update_user(user_id: int, updated_user: User):
-    #Here I use enumerate function to loop over the users list and get the position (index) and the user object at that position to update in place
-    for index, u in enumerate(users):
-        if u.user_id == user_id:
-            #With updated_user, I can replace it with the user object at position (index)
-            users[index] = updated_user
-            return updated_user
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-
-@app.delete("/api/users/delete/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_user(user_id: int):
-#Prints a status
-    for index, u in enumerate(users):
-        if u.user_id == user_id:
-            users.pop(index)
-            return
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-
-#Prints a status
-@app.get("/health")
-def health():
-    return {"status": "ok"}
